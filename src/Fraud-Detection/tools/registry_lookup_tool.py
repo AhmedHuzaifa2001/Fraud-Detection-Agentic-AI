@@ -10,9 +10,9 @@ MOCK_REGISTRY = {
         "jurisdiction": "Delaware"
     },
     "quickcash llc": {
-        "incorporation_date": "2026-01-12",  # 2 days ago!
+        "incorporation_date": "2026-01-12",  
         "status": "Active",
-        "directors": ["John Doe"],  # Suspicious generic name
+        "directors": ["John Doe"],  
         "address": "P.O. Box 789, Miami, FL",
         "jurisdiction": "Florida"
     },
@@ -33,9 +33,9 @@ MOCK_REGISTRY = {
 },
 
     "shell corp xyz": {
-        "incorporation_date": "2026-01-13",  # 1 day old!
+        "incorporation_date": "2026-01-13",  
         "status": "Active",
-        "directors": ["John Doe", "Jane Smith"],  # Generic names
+        "directors": ["John Doe", "Jane Smith"],  
         "address": "UPS Store #123, Suite 45, Las Vegas, NV",
         "jurisdiction": "Nevada"
 }
@@ -93,3 +93,8 @@ def registry_lookup(company_name:str) -> dict:
          } 
 
     
+# if __name__ == "__main__":
+#     print(registry_lookup("Acme Corp"))
+#     print(registry_lookup("QuickCash LLC"))
+#     print(registry_lookup("Ghost Industries"))
+#     print(registry_lookup("Unknown Company"))
