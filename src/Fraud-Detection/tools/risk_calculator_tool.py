@@ -4,6 +4,15 @@ SUSPICIOUS_NAMES = ["john doe", "jane smith", "unknown", "n/a", "not available"]
 
 
 def calculate_registry_risk(registry_data:dict) -> dict:
+    """
+    Calculate risk score based on company registry data.
+    
+    Checks for:
+    - Company existence in registry
+    - Company age (newly registered companies)
+    - Company status (dissolved/inactive)
+    - Suspicious or missing director names
+    """
     risk_score = 0
     risk_factors = []
 
