@@ -84,8 +84,95 @@ def calculate_geospatial_risk(geo_data: dict) -> dict:
     return {"risk_score": risk_score, "risk_factors": risk_factors}
 
 
-
-     
-
+def calculate_digital_risk(web_data: dict) -> dict:
+    """
+    Calculate risk score based on digital footprint data.
     
+    Checks for:
+    - Online presence and search results
+    - Negative keywords (fraud, scam, lawsuit, etc.)
+    - Social media presence
+    - LinkedIn profile and network size
+    """
+    risk_score = 0
+    risk_factors = []
 
+    results_count = web_data.get("results_count", 0)
+    if results_count == 0:
+        risk_score += 25
+        risk_factors.append("No online presence found")
+
+    negative_keywords_found = web_data.get("negative_keywords_found", [])
+    if negative_keywords_found:
+        risk_score += 40
+        keywords = ", ".join(negative_keywords_found)
+        risk_factors.append(f"Negative keywords found: {keywords}")
+
+    social_media_presence = web_data.get("social_media_presence", False)
+    if not social_media_presence:
+        risk_score += 15
+        risk_factors.append("No social media presence")
+
+    linkedin_connections = web_data.get("linkedin_connections", 0)
+    if linkedin_connections == 0:
+        risk_score += 15
+        risk_factors.append("No LinkedIn profile found")
+    elif linkedin_connections < 50:
+        risk_score += 10
+        risk_factors.append(f"Limited LinkedIn network ({linkedin_connections} connections)")
+
+    return {"risk_score": risk_score, "risk_factors": risk_factors}
+
+
+def calculate_total_risk(registry_data: dict, geo_data: dict, web_data: dict) -> dict:
+    """
+    Calculate total fraud risk score by combining all data sources.
+    
+    Calls all three specialized risk calculators and combines their results
+    into a comprehensive risk assessment with categorized risk level.
+    
+    Risk Levels:
+    - Low: 0-30 points
+    - Medium: 31-60 points
+    - High: 61-90 points
+    - Critical: 91+ points
+    """
+    # Calculate individual risk scores
+    registry_result = calculate_registry_risk(registry_data)
+    geo_result = calculate_geospatial_risk(geo_data)
+    digital_result = calculate_digital_risk(web_data)
+    
+    # Combine scores
+    total_score = (
+        registry_result["risk_score"] +
+        geo_result["risk_score"] +
+        digital_result["risk_score"]
+    )
+    
+    # Combine all risk factors
+    all_risk_factors = (
+        registry_result["risk_factors"] +
+        geo_result["risk_factors"] +
+        digital_result["risk_factors"]
+    )
+    
+    # Determine risk level
+    if total_score <= 30:
+        risk_level = "Low"
+    elif total_score <= 60:
+        risk_level = "Medium"
+    elif total_score <= 90:
+        risk_level = "High"
+    else:
+        risk_level = "Critical"
+    
+    return {
+        "total_risk_score": total_score,
+        "risk_level": risk_level,
+        "risk_factors": all_risk_factors,
+        "breakdown": {
+            "registry_score": registry_result["risk_score"],
+            "geospatial_score": geo_result["risk_score"],
+            "digital_score": digital_result["risk_score"]
+        }
+    }
