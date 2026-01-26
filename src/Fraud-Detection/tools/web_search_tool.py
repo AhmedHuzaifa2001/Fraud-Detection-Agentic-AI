@@ -195,7 +195,7 @@ def web_search(query:str) -> dict:
         "negative_keywords_found": [],
         "social_media_presence": False,
         "linkedin_connections": None,
-        "search_successful": True
+        "search_successful": False
     }
 
 
