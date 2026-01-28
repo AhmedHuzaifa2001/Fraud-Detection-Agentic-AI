@@ -17,8 +17,22 @@ REGISTRAR_SCOUT_PROMPT = """
         Provide a brief analysis summary in 2-3 sentences.
         """
 
-def registrar_scout_node(state:AgentState):
-
+def registrar_scout_node(state: AgentState):
+    """
+    Agent A: Registrar Scout - Company Registry Investigator.
+    
+    Analyzes company registry data to detect fraud patterns including:
+    - Company existence verification
+    - New company registrations (< 7 days)
+    - Dissolved or inactive companies
+    - Suspicious or missing director information
+    
+    Args:
+        state: Current agent state containing company_name
+        
+    Returns:
+        Updated state with registry_data, evidence_log, and risk_score
+    """
     company_name = state["company_name"]
 
     data = registry_lookup(company_name)

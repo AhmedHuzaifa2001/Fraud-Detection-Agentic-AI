@@ -19,8 +19,22 @@ Look for:
 Provide a brief analysis summary in 2-3 sentences focusing on digital credibility.
 """
 
-def digital_footprint_node(state:AgentState):
-
+def digital_footprint_node(state: AgentState):
+    """
+    Agent C: Digital Footprint Tracer - Online Presence Investigator.
+    
+    Analyzes digital presence to detect suspicious online patterns:
+    - No or minimal online presence (ghost companies)
+    - Negative keywords (fraud, scam, lawsuit)
+    - Missing social media presence
+    - Weak or non-existent LinkedIn profiles
+    
+    Args:
+        state: Current agent state containing company_name
+        
+    Returns:
+        Updated state with web_data, evidence_log, and risk_score
+    """
     company_name = state["company_name"]
 
     digital_data = web_search(company_name)

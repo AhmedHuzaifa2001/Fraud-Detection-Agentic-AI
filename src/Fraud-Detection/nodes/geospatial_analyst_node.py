@@ -25,9 +25,22 @@ Key fraud indicators:
 Provide a brief analysis summary in 2-3 sentences focusing on location credibility.
 """
 
-def geospatial_analyst_node(state:AgentState):
-
-
+def geospatial_analyst_node(state: AgentState):
+    """
+    Agent B: Geo-Spatial Analyst - Address Verification Specialist.
+    
+    Analyzes physical address data to identify fake or suspicious locations:
+    - Unverified addresses
+    - P.O. Boxes and mail forwarding services
+    - Empty lots with no structures
+    - Zoning mismatches (business in residential area)
+    
+    Args:
+        state: Current agent state containing registry_data with address
+        
+    Returns:
+        Updated state with geo_data, evidence_log, and risk_score
+    """
     address = state["registry_data"]["address"]
 
     geo_data = geospatial_lookup(address)
