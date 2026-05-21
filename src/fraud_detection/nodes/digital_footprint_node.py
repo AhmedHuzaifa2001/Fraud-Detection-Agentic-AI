@@ -1,6 +1,6 @@
-from tools.web_search_tool import web_search
-from tools.risk_calculator_tool import calculate_digital_risk
-from state.state import AgentState
+from src.fraud_detection.tools.web_search_tool import web_search
+from src.fraud_detection.tools.risk_calculator_tool import calculate_digital_risk
+from src.fraud_detection.state.state import AgentState
 from langchain_core.messages import HumanMessage
 
 

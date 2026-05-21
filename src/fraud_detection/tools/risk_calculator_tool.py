@@ -114,6 +114,9 @@ def calculate_digital_risk(web_data: dict) -> dict:
         risk_factors.append("No social media presence")
 
     linkedin_connections = web_data.get("linkedin_connections", 0)
+    if linkedin_connections is None:
+        linkedin_connections = 0
+
     if linkedin_connections == 0:
         risk_score += 15
         risk_factors.append("No LinkedIn profile found")

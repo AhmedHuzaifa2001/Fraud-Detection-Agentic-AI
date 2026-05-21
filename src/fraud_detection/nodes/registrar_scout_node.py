@@ -1,6 +1,6 @@
-from tools.registry_lookup_tool import registry_lookup
-from state.state import AgentState
-from tools.risk_calculator_tool import calculate_registry_risk
+from src.fraud_detection.tools.registry_lookup_tool import registry_lookup
+from src.fraud_detection.state.state import AgentState
+from src.fraud_detection.tools.risk_calculator_tool import calculate_registry_risk
 from langchain_core.messages import HumanMessage
 
 REGISTRAR_SCOUT_PROMPT = """
@@ -61,6 +61,7 @@ def registrar_scout_node(state: AgentState):
     }
 
 
-
+# The nodes (registrar, geospatial, digital) are treated as “reporting agents,” 
+# so they log their findings as HumanMessage (observations) rather than decisions.
 
 

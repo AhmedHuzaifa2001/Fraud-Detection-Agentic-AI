@@ -1,0 +1,10 @@
+{
+    "dependencies": [
+        "."
+    ],
+    "graphs": {
+        "fraud_detection": "./src/fraud_detection/graph/fraud_detection_graph.py:graph_builder"
+    },
+    "env": "./.env"
+}
+

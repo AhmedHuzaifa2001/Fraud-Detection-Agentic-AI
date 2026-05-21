@@ -1,7 +1,7 @@
-from tools.geospatial_tool import geospatial_lookup
-from state.state import AgentState
+from src.fraud_detection.tools.geospatial_tool import geospatial_lookup
+from src.fraud_detection.state.state import AgentState
 from langchain_core.messages import HumanMessage
-from tools.risk_calculator_tool import calculate_geospatial_risk
+from src.fraud_detection.tools.risk_calculator_tool import calculate_geospatial_risk
 
 GEOSPATIAL_ANALYST_PROMPT = """
 You are an Address Verification Specialist specializing in fraud detection.

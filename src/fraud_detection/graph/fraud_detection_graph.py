@@ -1,9 +1,9 @@
 from langgraph.graph import StateGraph, START, END
-from state.state import AgentState
-from nodes.registrar_scout_node import registrar_scout_node
-from nodes.geospatial_analyst_node import geospatial_analyst_node
-from nodes.digital_footprint_node import digital_footprint_node
-from nodes.supervisor_node import supervisor_node
+from src.fraud_detection.state.state import AgentState
+from src.fraud_detection.nodes.registrar_scout_node import registrar_scout_node
+from src.fraud_detection.nodes.geospatial_analyst_node import geospatial_analyst_node
+from src.fraud_detection.nodes.digital_footprint_node import digital_footprint_node
+from src.fraud_detection.nodes.supervisor_node import supervisor_node
 
 
 workflow = StateGraph(AgentState)
