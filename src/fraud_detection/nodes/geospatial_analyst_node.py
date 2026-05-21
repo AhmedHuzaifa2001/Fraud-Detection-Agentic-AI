@@ -1,7 +1,11 @@
 from src.fraud_detection.tools.geospatial_tool import geospatial_lookup
 from src.fraud_detection.state.state import AgentState
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage , SystemMessage
 from src.fraud_detection.tools.risk_calculator_tool import calculate_geospatial_risk
+from src.fraud_detection.LLM.groqLLM import get_groq_llm
+
+
+llm = get_groq_llm()
 
 GEOSPATIAL_ANALYST_PROMPT = """
 You are an Address Verification Specialist specializing in fraud detection.
@@ -61,13 +65,19 @@ def geospatial_analyst_node(state: AgentState):
     - {risk_factors_text}
     """
 
+    messages = [
+        SystemMessage(content = GEOSPATIAL_ANALYST_PROMPT),
+        HumanMessage(content = summary)
+    ]
+
+    response = llm.invoke(messages)
 
     current_score = state.get("risk_score", 0)
     new_score = current_score + risk_score_factors["risk_score"]
 
     return {
         "geo_data": geo_data,  
-        "evidence_log": [HumanMessage(content=summary)],
+        "evidence_log": [response],
         "risk_score": new_score
     }
 

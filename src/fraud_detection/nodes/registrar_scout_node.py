@@ -1,8 +1,12 @@
 from src.fraud_detection.tools.registry_lookup_tool import registry_lookup
 from src.fraud_detection.state.state import AgentState
+from src.fraud_detection.LLM.groqLLM import get_groq_llm
 from src.fraud_detection.tools.risk_calculator_tool import calculate_registry_risk
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage , SystemMessage
 
+
+
+llm = get_groq_llm()
 REGISTRAR_SCOUT_PROMPT = """
         You are a Company Registry Investigator specializing in fraud detection.
 
@@ -51,12 +55,19 @@ def registrar_scout_node(state: AgentState):
     - {risk_factors_text}
     """
 
+    messages = [
+        SystemMessage(content = REGISTRAR_SCOUT_PROMPT),
+        HumanMessage(content = summary)
+    ]
+
+    response = llm.invoke(messages)
+
     current_score = state.get("risk_score", 0)
     new_score = current_score + risk_score_factors["risk_score"]
 
     return {
         "registry_data": data,  
-        "evidence_log": [HumanMessage(content=summary)],
+        "evidence_log": [response],
         "risk_score": new_score
     }
 

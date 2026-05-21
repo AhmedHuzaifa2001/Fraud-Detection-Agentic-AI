@@ -1,7 +1,10 @@
 from src.fraud_detection.tools.risk_calculator_tool import calculate_total_risk
 from src.fraud_detection.state.state import AgentState
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage , SystemMessage , HumanMessage
+from src.fraud_detection.LLM.groqLLM import get_groq_llm
 
+
+llm = get_groq_llm()
 
 SUPERVISOR_PROMPT = """
 You are the Investigation Supervisor coordinating fraud detection.
@@ -72,11 +75,16 @@ def supervisor_node(state: AgentState):
     else:  
         summary += "✅ Company cleared - Low risk"
 
+    messages = [
+        SystemMessage(content = SUPERVISOR_PROMPT),
+        HumanMessage(content = summary)
+    ]
 
+    response = llm.invoke(messages)
     return{
         "risk_score": total_risk_score,
         "investigation_status": investigation_status,
-        "evidence_log": [AIMessage(content=summary)] # AIMessage (supervisor's decision)
+        "evidence_log": [response] 
     }
     
 

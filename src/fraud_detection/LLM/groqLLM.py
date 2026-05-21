@@ -1,9 +1,13 @@
 from langchain_groq import ChatGroq
+from dotenv import load_dotenv
+load_dotenv()
+import os
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 AVAILABLE_GROQ_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
 
-def get_groq_llm(api_key: str, model_name: str, temperature: float = 0):
+def get_groq_llm(api_key: str = None, model_name: str = "llama-3.3-70b-versatile", temperature: float = 0):
     """
     Initialize and return Groq LLM instance with user-provided API key.
     
@@ -25,7 +29,7 @@ def get_groq_llm(api_key: str, model_name: str, temperature: float = 0):
         raise ValueError(f"Invalid model '{model_name}'. Choose from: {', '.join(AVAILABLE_GROQ_MODELS)}")
     
     try:
-        llm = ChatGroq(api_key=api_key, model=model_name, temperature=temperature)
+        llm = ChatGroq(api_key=GROQ_API_KEY, model="llama-3.3-70b-versatile", temperature=temperature)
         return llm
     except ValueError:
         raise

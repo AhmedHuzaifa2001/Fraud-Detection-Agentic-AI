@@ -1,8 +1,11 @@
 from src.fraud_detection.tools.web_search_tool import web_search
 from src.fraud_detection.tools.risk_calculator_tool import calculate_digital_risk
 from src.fraud_detection.state.state import AgentState
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
+from src.fraud_detection.LLM.groqLLM import get_groq_llm
 
+
+llm = get_groq_llm()
 
 DIGITAL_FOOTPRINT_TRACER_PROMPT = """
 You are a Digital Footprint Investigator specializing in fraud detection.
@@ -57,12 +60,20 @@ def digital_footprint_node(state: AgentState):
     - {risk_factors_text}
     """
 
+
+    messages = [
+        SystemMessage(content = DIGITAL_FOOTPRINT_TRACER_PROMPT),
+        HumanMessage(content = summary)
+    ]
+
+    response = llm.invoke(messages)
+
     current_score = state.get("risk_score", 0)
     new_score = current_score + risk_score_factors["risk_score"]
 
     return {
         "web_data": digital_data,  
-        "evidence_log": [HumanMessage(content=summary)],
+        "evidence_log": [response],
         "risk_score": new_score
     }
 
