@@ -45,7 +45,7 @@ def geospatial_analyst_node(state: AgentState):
     Returns:
         Updated state with geo_data, evidence_log, and risk_score
     """
-    address = state["registry_data"]["address"]
+    address = state["registry_data"].get("address" , "Address Unknown")
 
     geo_data = geospatial_lookup(address)
 

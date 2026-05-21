@@ -89,6 +89,7 @@ def registry_lookup(company_name:str) -> dict:
              
                "exists" : False,
                "company_name" : company_name,
+               "address": "Address Not Found",
                 "error": "Company not found in registry"
          } 
 

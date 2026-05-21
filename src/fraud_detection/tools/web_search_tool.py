@@ -52,7 +52,7 @@ def _parse_tavily_results(query: str, tavily_response: dict) -> dict:
 
         # Check specifically for LinkedIn
         if "linkedin.com" in url:
-            linkedin_connections = "Profile Found"
+            linkedin_connections = url
 
     return {
         "query": query,
