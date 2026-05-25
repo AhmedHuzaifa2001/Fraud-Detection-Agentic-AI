@@ -47,6 +47,9 @@ def geospatial_analyst_node(state: AgentState):
     """
     address = state["registry_data"].get("address" , "Address Unknown")
 
+    if address == "Address Not Found" or address == "Address Unknown":
+        address = state["company_name"]
+
     geo_data = geospatial_lookup(address)
 
     risk_score_factors = calculate_geospatial_risk(geo_data)

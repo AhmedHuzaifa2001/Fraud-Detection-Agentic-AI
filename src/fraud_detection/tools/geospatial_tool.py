@@ -1,3 +1,7 @@
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
+
+
 # Mock geospatial database
 MOCK_ADDRESSES = {
     "123 business blvd, suite 500, new york, ny": {
@@ -48,6 +52,8 @@ MOCK_ADDRESSES = {
 }
 
 
+geolocator = Nominatim(user_agent="fraud_detection_agent_project" , timeout = 10)
+
 def geospatial_lookup(address:str) -> dict:
     """
     Verifies physical address and detects suspicious locations.
@@ -61,23 +67,40 @@ def geospatial_lookup(address:str) -> dict:
 
     print(f"Verifying the Address: {address}")
 
-    normalized_address = address.lower().strip()
-
-    address_data = MOCK_ADDRESSES.get(normalized_address)
-
-    if address_data:
-        return{
-            "verified": True,
-            "address": address,
-            "zoning_type": address_data["zoning_type"],
-            "is_po_box": address_data["is_po_box"],
-            "is_ups_store": address_data["is_ups_store"],
-            "location_type": address_data["location_type"],
-            "coordinates": address_data["coordinates"]
-        }
-    
-    else:
+    if address == "Address Not Found":
         return _analyze_address_patterns(address)
+
+    else:
+        try:
+            location = geolocator.geocode(address)
+            if location:
+                result = _analyze_address_patterns(address)
+                result["verified"] = True
+                result["coordinates"] = {"lat": location.latitude, "lon": location.longitude}
+                result["location_type"] = location.raw.get("class", "Unknown").title()
+
+                return result
+        except Exception as e:
+            
+            print(f"⚠️ Geocoding failed: {e}. Falling back to mock data.")
+
+        normalized_address = address.lower().strip()
+        address_data = MOCK_ADDRESSES.get(normalized_address)
+        
+        if address_data:
+            return {
+                "verified": True,
+                "address": address,
+                "zoning_type": address_data["zoning_type"],
+                "is_po_box": address_data["is_po_box"],
+                "is_ups_store": address_data["is_ups_store"],
+                "location_type": address_data["location_type"],
+                "coordinates": address_data["coordinates"]
+            }
+        else:
+            # Final fallback: just string analysis
+            return _analyze_address_patterns(address)
+
 
 
 
