@@ -1,5 +1,20 @@
 from datetime import datetime
+from tavily import TavilyClient
+from src.fraud_detection.LLM.groqLLM import get_groq_llm
+from pydantic import BaseModel , Field
+from langchain.messages import SystemMessage , HumanMessage
+import os
 
+tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+
+
+class RegistryData(BaseModel):
+    exists: bool = Field(description = "True if the search results confirm this is a real company")
+    incorporation_date: str = Field(description = "Format YYYY-MM-DD, or Unknown")
+    status: str = Field(description = "Active, Dissolved, or Unknown")
+    directors:list[str] = Field(description = "Names of key people, or empty list")
+    address: str = Field(description = "The physical headquarters, or Address Not Found") 
+    jurisdiction: str = Field(description = "The state/country of registration, or Unknown")
 
 MOCK_REGISTRY = {
     "acme corp": {
@@ -55,47 +70,57 @@ def registry_lookup(company_name:str) -> dict:
         Dictionary with company details or error if not found
     """
 
-    print(f"Checking the {company_name} database")
+
+    try:
+        query = f"{company_name} company registration legal status directors headquarters opencorporates"
+
+        tavily_response = tavily_client.search(query=query)
+
+        results = tavily_response.get("results", [])
+        top_contents = [r.get("content", "") for r in results[:5] if r.get("content")]
+        raw_registry_text = "\n\n".join(top_contents)
+
+        llm = get_groq_llm()
+        structured_llm = llm.with_structured_output(RegistryData)
+
+        system_prompt = "You are an expert data extractor. Extract company " \
+        "registry details from the provided search results. " \
+        "If a piece of data is completely missing, use 'Unknown' or 'Address Not Found'"
+
+        final_message = [
+            SystemMessage(content = system_prompt),
+            HumanMessage(content = raw_registry_text)
+        ]
 
 
-    normalized_company_name = company_name.lower().strip()
+        response = structured_llm.invoke(final_message)
 
-     ## checking if company exists
 
-    company_data = MOCK_REGISTRY.get(normalized_company_name)
-
-    if company_data:
-
-        incorporation_date_str = company_data["incorporation_date"]
-        try:
-            incorporation_date = datetime.strptime(incorporation_date_str, "%Y-%m-%d")
-            company_age_days = (datetime.now() - incorporation_date).days
-        except ValueError:
-            company_age_days = None
-
-        return{
-               "exists" : True,
-               "company_name" : company_name,
-               "incorporation_date" : company_data["incorporation_date"],
-               "company_age_days": company_age_days,
-               "status" : company_data["status"],
-               "directors": company_data["directors"],
-               "address":company_data["address"],
-               "jurisdiction" : company_data["jurisdiction"] 
-          }
-     
-    else:
-         return{
-             
-               "exists" : False,
-               "company_name" : company_name,
-               "address": "Address Not Found",
-                "error": "Company not found in registry"
-         } 
-
-    
-# if __name__ == "__main__":
-#     print(registry_lookup("Acme Corp"))
-#     print(registry_lookup("QuickCash LLC"))
-#     print(registry_lookup("Ghost Industries"))
-#     print(registry_lookup("Unknown Company"))
+        company_age_days = None
+        if response.incorporation_date and response.incorporation_date.lower() != "unknown":
+            try:
+                # Assumes the LLM formatted it as YYYY-MM-DD
+                inc_date = datetime.strptime(response.incorporation_date, "%Y-%m-%d")
+                company_age_days = (datetime.now() - inc_date).days
+            except ValueError:
+                # If the LLM returns a weird date format, just leave it as None
+                pass
+        # 2. Return the final dictionary formatted exactly how the rest of the app expects it
+        return {
+            "exists": response.exists,
+            "company_name": company_name,
+            "incorporation_date": response.incorporation_date,
+            "company_age_days": company_age_days,
+            "status": response.status,
+            "directors": response.directors,
+            "address": response.address,
+            "jurisdiction": response.jurisdiction 
+        }
+    except Exception as e:
+        print(f"Registry lookup failed: {e}")
+        return {
+            "exists": False,
+            "company_name": company_name,
+            "address": "Address Not Found",
+            "error": "Registry search failed due to network or API error."
+        }
