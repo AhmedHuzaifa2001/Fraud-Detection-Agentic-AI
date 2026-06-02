@@ -29,7 +29,7 @@ def get_groq_llm(api_key: str = GROQ_API_KEY, model_name: str = "llama-3.3-70b-v
         raise ValueError(f"Invalid model '{model_name}'. Choose from: {', '.join(AVAILABLE_GROQ_MODELS)}")
     
     try:
-        llm = ChatGroq(api_key=GROQ_API_KEY, model="llama-3.3-70b-versatile", temperature=temperature)
+        llm = ChatGroq(api_key=GROQ_API_KEY, model="openai/gpt-oss-120b", temperature=temperature)
         return llm
     except ValueError:
         raise

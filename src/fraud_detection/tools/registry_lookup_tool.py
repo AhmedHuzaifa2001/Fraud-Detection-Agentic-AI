@@ -72,7 +72,7 @@ def registry_lookup(company_name:str) -> dict:
 
 
     try:
-        query = f"{company_name} company registration legal status directors headquarters opencorporates"
+        query = f'"{company_name}" corporate headquarters address, key executives, and company history'
 
         tavily_response = tavily_client.search(query=query)
 
@@ -83,9 +83,18 @@ def registry_lookup(company_name:str) -> dict:
         llm = get_groq_llm()
         structured_llm = llm.with_structured_output(RegistryData)
 
-        system_prompt = "You are an expert data extractor. Extract company " \
-        "registry details from the provided search results. " \
-        "If a piece of data is completely missing, use 'Unknown' or 'Address Not Found'"
+        system_prompt = """You are an expert data extractor. Extract company registry and corporate 
+        details from the provided search results.
+            CRITICAL RULES:
+            1. Even if you cannot find official legal registry documents, if the search results 
+            clearly indicate that this is a real, operating business or well-known brand, you MUST 
+            set 'exists' to True.
+            2. If the company operates under a brand name (e.g. 'Optus' instead of 
+            'Singtel Optus Pty Ltd'), still treat it as a real company.
+            3. If a specific piece of data (like incorporation date or directors) is 
+            completely missing, use 'Unknown' or 'Address Not Found', but do not mark the company 
+            as fake just because a single field is missing.
+            """
 
         final_message = [
             SystemMessage(content = system_prompt),

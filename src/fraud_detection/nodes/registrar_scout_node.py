@@ -62,13 +62,13 @@ def registrar_scout_node(state: AgentState):
 
     response = llm.invoke(messages)
 
-    current_score = state.get("risk_score", 0)
-    new_score = current_score + risk_score_factors["risk_score"]
+    # current_score = state.get("risk_score", 0)
+    # new_score = current_score + risk_score_factors["risk_score"]
 
     return {
         "registry_data": data,  
         "evidence_log": [response],
-        "risk_score": new_score
+        "risk_score": risk_score_factors["risk_score"]
     }
 
 
