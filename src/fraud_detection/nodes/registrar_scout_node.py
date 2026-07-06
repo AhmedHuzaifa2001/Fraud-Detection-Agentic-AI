@@ -3,23 +3,34 @@ from src.fraud_detection.state.state import AgentState
 from src.fraud_detection.LLM.groqLLM import get_groq_llm
 from src.fraud_detection.tools.risk_calculator_tool import calculate_registry_risk
 from langchain_core.messages import HumanMessage , SystemMessage
+from pydantic import BaseModel , Field
 
+
+class RegistryAgentRiskAssessment(BaseModel):
+    reasoning: str = Field(description="A step-by-step explanation of why this data is or isn't suspicious.")
+    risk_factors: list[str] = Field(description="A list of specific red flags found, or an empty list if none.")
+    calculated_score: int = Field(description="An assigned risk score from 0 to 100 based on the evidence.")
 
 
 llm = get_groq_llm()
+
 REGISTRAR_SCOUT_PROMPT = """
-        You are a Company Registry Investigator specializing in fraud detection.
+You are a Company Registry Investigator specializing in fraud detection. 
+I will provide raw registry data. Your task is to evaluate the fraud risk on a scale of 0 to 100.
 
-        Your task: Analyze company registry data and identify suspicious patterns.
+EVALUATION GUIDELINES:
+- Age: Brand new companies (< 7 days) are slightly risky.
+- Status: Dissolved or inactive companies actively conducting business are massive red flags (Score > 80).
+- Directors: Generic names (John Doe) or completely missing directors warrant higher risk scores.
 
-        Look for:
-        - Newly registered companies (< 7 days old)
-        - Dissolved or inactive companies
-        - Suspicious director names (John Doe, Unknown, etc.)
-        - Missing director information
+⚠️ CRITICAL EXCEPTIONS FOR WELL-KNOWN BRANDS:
+If the company is a globally recognized, massive corporation (e.g., Google, Microsoft, Apple, Amazon), and fields like 'directors' or 'incorporation_date' are missing or empty, you MUST assume this is a limitation of our web search tool, NOT an indicator of fraud. 
+Do not penalize famous mega-corporations for missing generic registry fields. Assign them a very low risk score (0-10) unless their status is explicitly 'Dissolved'.
 
-        Provide a brief analysis summary in 2-3 sentences.
-        """
+Think step-by-step about the context, list the risk factors, and assign a final calculated score.
+"""
+
+
 
 def registrar_scout_node(state: AgentState):
     """
@@ -41,34 +52,31 @@ def registrar_scout_node(state: AgentState):
 
     data = registry_lookup(company_name)
 
-    risk_score_factors = calculate_registry_risk(data)
+    # risk_score_factors = calculate_registry_risk(data)
 
+    structured_llm = llm.with_structured_output(RegistryAgentRiskAssessment)
     # Format the results into a readable message
-    risk_factors_text = "\n- ".join(risk_score_factors["risk_factors"]) if risk_score_factors["risk_factors"] else "No issues found"
+    # risk_factors_text = "\n- ".join(risk_score_factors["risk_factors"]) if risk_score_factors["risk_factors"] else "No issues found"
 
-    summary = f"""🔍 REGISTRAR SCOUT ANALYSIS:
-    Company: {data.get('company_name', 'Unknown')}
-    Status: {data.get('status', 'Unknown')}
-    Registry Risk Score: {risk_score_factors['risk_score']}
-
-    Red Flags:
-    - {risk_factors_text}
-    """
 
     messages = [
         SystemMessage(content = REGISTRAR_SCOUT_PROMPT),
-        HumanMessage(content = summary)
+        HumanMessage(content = str(data))
     ]
 
-    response = llm.invoke(messages)
+    assessment = structured_llm.invoke(messages)
 
-    # current_score = state.get("risk_score", 0)
-    # new_score = current_score + risk_score_factors["risk_score"]
+    summary = f"""🔍 REGISTRAR SCOUT REASONING:
+    Reasoning: {assessment.reasoning}
+    Red Flags: {', '.join(assessment.risk_factors) if assessment.risk_factors else 'None'}
+    Assigned Score: {assessment.calculated_score}
+    """
+
 
     return {
         "registry_data": data,  
-        "evidence_log": [response],
-        "risk_score": risk_score_factors["risk_score"]
+        "evidence_log": [HumanMessage(content=summary)],
+        "risk_score": assessment.calculated_score
     }
 
 
