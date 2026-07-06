@@ -19,7 +19,10 @@ workflow.add_node("supervisor_node" , supervisor_node)
 ## Adding Edges
 workflow.add_edge(START , "registrar_scout_node")
 workflow.add_edge("registrar_scout_node" , "geospatial_analyst_node")
-workflow.add_edge("geospatial_analyst_node" , "digital_footprint_node")
+workflow.add_edge("registrar_scout_node" , "digital_footprint_node")
+
+
+workflow.add_edge("geospatial_analyst_node" , "supervisor_node")
 workflow.add_edge("digital_footprint_node" , "supervisor_node")
 workflow.add_edge("supervisor_node" , END)
 

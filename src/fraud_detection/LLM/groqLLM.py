@@ -7,7 +7,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 AVAILABLE_GROQ_MODELS = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
 
-def get_groq_llm(api_key: str = GROQ_API_KEY, model_name: str = "llama-3.3-70b-versatile", temperature: float = 0):
+def get_groq_llm(api_key: str = GROQ_API_KEY, model_name: str = "llama-3.3-70b-versatile", temperature: float = 0.7):
     """
     Initialize and return Groq LLM instance with user-provided API key.
     

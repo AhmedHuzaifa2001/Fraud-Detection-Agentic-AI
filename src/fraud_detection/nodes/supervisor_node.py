@@ -88,11 +88,5 @@ def supervisor_node(state: AgentState):
     }
     
 
-# HumanMessage = "Here's data" (observation)
-# AIMessage = "Here's my decision" (reasoning)
-# The supervisor is the only one making a decision, the others just report findings
-# that is why we used AIMessage to this Node and other Nodes with HumanMessage
-
-
 
 
