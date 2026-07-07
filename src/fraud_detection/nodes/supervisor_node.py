@@ -33,56 +33,44 @@ def supervisor_node(state: AgentState):
     Updates investigation_status based on risk level.
     """
 
-    ## Get all data
-
-    registry_data = state["registry_data"]
-    geo_data = state["geo_data"]
-    web_data = state["web_data"]
-
-    final_assessment = calculate_total_risk(registry_data , geo_data , web_data)
-
-    total_risk_score = final_assessment["total_risk_score"]
-    risk_level = final_assessment["risk_level"]
-    breakdown = final_assessment["breakdown"]
-
-    if risk_level == "Critical" or risk_level == "High":
-        investigation_status = "escalated"
-
-    elif risk_level == "Medium":
-        investigation_status = "pending"
-
-    else:  # Low
-        investigation_status = "cleared"
-
-
-    summary = f"""⚖️ SUPERVISOR FINAL ASSESSMENT:
-        Total Risk Score: {total_risk_score}
-        Risk Level: {risk_level}
-        Decision: {investigation_status.upper()}
-
-        Score Breakdown:
-        - Registry: {breakdown['registry_score']}
-        - Geospatial: {breakdown['geospatial_score']}
-        - Digital: {breakdown['digital_score']}
-
-        """
+    total_risk_score = state.get("risk_score", 0)
 
     
-    if investigation_status == "escalated":
-        summary += "⚠️ ESCALATING TO HUMAN ANALYST - Immediate review required!"
-    elif investigation_status == "pending":
-        summary += "⚠️ FLAGGED FOR MONITORING - Medium risk detected"
-    else:  
-        summary += "✅ Company cleared - Low risk"
+    if total_risk_score <= 30:
+        risk_level = "Low"
+        investigation_status = "cleared"
+    elif total_risk_score <= 60:
+        risk_level = "Medium"
+        investigation_status = "pending"
+    else:
+        risk_level = "High" if total_risk_score <= 90 else "Critical"
+        investigation_status = "escalated"
 
+    
+    summary = f"""⚖️ SUPERVISOR FINAL ASSESSMENT:
+        Total Accumulated Risk Score: {total_risk_score}
+        Risk Level: {risk_level}
+        Decision: {investigation_status.upper()}
+        """
+    
+    
+    if investigation_status == "escalated":
+        summary += "\n⚠️ ESCALATING TO HUMAN ANALYST - Immediate review required!"
+    elif investigation_status == "pending":
+        summary += "\n⚠️ FLAGGED FOR MONITORING - Routing to human analyst queue."
+    else:  
+        summary += "\n✅ Company cleared - Low risk. Closing investigation."
+
+    
     messages = [
-        SystemMessage(content = SUPERVISOR_PROMPT),
-        HumanMessage(content = summary)
+        SystemMessage(content=SUPERVISOR_PROMPT),
+        HumanMessage(content=summary)
     ]
 
     response = llm.invoke(messages)
-    return{
-        "risk_score": total_risk_score,
+    
+    
+    return {
         "investigation_status": investigation_status,
         "evidence_log": [response] 
     }
