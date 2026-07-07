@@ -3,13 +3,9 @@ from src.fraud_detection.state.state import AgentState
 from src.fraud_detection.LLM.groqLLM import get_groq_llm
 from src.fraud_detection.tools.risk_calculator_tool import calculate_registry_risk
 from langchain_core.messages import HumanMessage , SystemMessage
-from pydantic import BaseModel , Field
+from src.fraud_detection.state.state import RegistryAgentRiskAssessment
 
 
-class RegistryAgentRiskAssessment(BaseModel):
-    reasoning: str = Field(description="A step-by-step explanation of why this data is or isn't suspicious.")
-    risk_factors: list[str] = Field(description="A list of specific red flags found, or an empty list if none.")
-    calculated_score: int = Field(description="An assigned risk score from 0 to 100 based on the evidence.")
 
 
 llm = get_groq_llm()

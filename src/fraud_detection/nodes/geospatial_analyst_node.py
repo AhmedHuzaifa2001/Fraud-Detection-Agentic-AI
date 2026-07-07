@@ -3,30 +3,25 @@ from src.fraud_detection.state.state import AgentState
 from langchain_core.messages import HumanMessage , SystemMessage
 from src.fraud_detection.tools.risk_calculator_tool import calculate_geospatial_risk
 from src.fraud_detection.LLM.groqLLM import get_groq_llm
-
+from src.fraud_detection.state.state import RegistryAgentRiskAssessment
 
 llm = get_groq_llm()
 
 GEOSPATIAL_ANALYST_PROMPT = """
 You are an Address Verification Specialist specializing in fraud detection.
+I will provide raw geospatial data. Your task is to evaluate the physical location fraud risk on a scale of 0 to 100.
 
-Your task: Analyze physical address data to identify fake or suspicious business locations.
+EVALUATION GUIDELINES:
+- Unverified Addresses: Risk score +50 (unless it's a known massive brand).
+- P.O. Boxes / Mail Forwarding: Risk score +30 (Often used by shell companies).
+- Empty Lots: Risk score +50 (Highly suspicious for operating businesses).
+- Zoning Mismatches: Claiming a massive corporate headquarters in a "Residential" zone is a major red flag (+40).
 
-Look for:
-- Unverified addresses that cannot be confirmed
-- P.O. Boxes (used to hide real location)
-- Mail forwarding services (UPS Store, etc.)
-- Empty lots with no physical structure
-- Zoning mismatches (e.g., claiming warehouse operation in residential zone)
-- Businesses operating from residential addresses inappropriately
+⚠️ CRITICAL EXCEPTIONS:
+If the location_type or zoning_type is listed as "Unknown", but the address is explicitly marked as "verified: True", this is a limitation of our mapping tool, NOT a fraud indicator. Do not penalize verified addresses for missing zoning data. 
+If no explicit red flags are found, assign a score of 0.
 
-Key fraud indicators:
-- Shell companies often use P.O. boxes or mail drops
-- Legitimate businesses have verifiable physical locations
-- Zoning violations suggest false address declarations
-- Empty lots indicate completely fabricated addresses
-
-Provide a brief analysis summary in 2-3 sentences focusing on location credibility.
+Think step-by-step about the context, list the risk factors, and assign a final calculated score.
 """
 
 def geospatial_analyst_node(state: AgentState):
@@ -48,40 +43,34 @@ def geospatial_analyst_node(state: AgentState):
     address = state["registry_data"].get("address" , "Address Unknown")
 
     if address == "Address Not Found" or address == "Address Unknown":
-        address = state["company_name"]
+        address = state.get("company_name" , "Unknown Company")
 
     geo_data = geospatial_lookup(address)
 
     risk_score_factors = calculate_geospatial_risk(geo_data)
 
     
-    risk_factors_text = "\n- ".join(risk_score_factors["risk_factors"]) if risk_score_factors["risk_factors"] else "No issues found"
+    structure_llm = llm.with_structured_output(RegistryAgentRiskAssessment)
 
-    summary = f"""🗺️ GEO-SPATIAL ANALYST ANALYSIS:
-    Address: {geo_data.get('address', 'Unknown')}
-    Verified: {geo_data.get('verified', False)}
-    Location Type: {geo_data.get('location_type', 'Unknown')}
-    Zoning: {geo_data.get('zoning_type', 'Unknown')}
-    Geospatial Risk Score: {risk_score_factors['risk_score']}
-
-    Red Flags:
-    - {risk_factors_text}
-    """
 
     messages = [
         SystemMessage(content = GEOSPATIAL_ANALYST_PROMPT),
-        HumanMessage(content = summary)
+        HumanMessage(content = str(geo_data))
     ]
 
-    response = llm.invoke(messages)
+    assessment = structure_llm.invoke(messages)
 
-    # current_score = state.get("risk_score", 0)
-    # new_score = current_score + risk_score_factors["risk_score"]
+    summary = f"""🗺️ GEO-SPATIAL ANALYST REASONING:
+    Reasoning: {assessment.reasoning}
+    Red Flags: {', '.join(assessment.risk_factors) if assessment.risk_factors else 'None'}
+    Assigned Score: {assessment.calculated_score}
+    """
+
 
     return {
         "geo_data": geo_data,  
-        "evidence_log": [response],
-        "risk_score": risk_score_factors["risk_score"]
+        "evidence_log": [HumanMessage(content=summary)],
+        "risk_score": assessment.calculated_score
     }
 
 
