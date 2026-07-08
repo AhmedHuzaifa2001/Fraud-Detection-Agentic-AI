@@ -1,4 +1,4 @@
-from src.fraud_detection.tools.web_search_tool import web_search
+from src.fraud_detection.tools.web_search_tool import digital_footprint_lookup
 from src.fraud_detection.tools.risk_calculator_tool import calculate_digital_risk
 from src.fraud_detection.state.state import AgentState
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -41,7 +41,7 @@ def digital_footprint_node(state: AgentState):
     """
     company_name = state["company_name"]
 
-    digital_data = web_search(company_name)
+    digital_data = digital_footprint_lookup(company_name)
 
     structured_llm = llm.with_structured_output(RegistryAgentRiskAssessment)
 
